@@ -1,21 +1,21 @@
 #!/bin/bash
 
 # Define the reference genome ID and paths
-ref_id="GCF_000146045.2"
-ref_fna="/share/home/helab/weixianfang/MTDtool/ref/GCF_000146045.2_R64_genomic.fna"
-species_name="Saccharomyces_cerevisiae"
-indelfile_path="/data/home/helab/weixianfang/trfinder-TRfinder/rsgb/rsgb_assembly_summary/fungi_ni/sc-zhongpao/mugsy/Saccharomyces_cerevisiae"
+ref_id="" ##Please enter the file address here
+ref_fna="" ##Please enter the file address here
+species_name="" ##Please enter the file address here
+indelfile_path="" ##Please enter the file address here
 
 # Step 1: Filter the fungal genomes
 while IFS= read -r a; do
-    raw_fna=$(find /data/home/helab/weixianfang/trfinder-TRfinder/rsgb/fungi/ -name "$a*genomic.fna.gz")
+    raw_fna=$(find "" -name "$a*genomic.fna.gz") ##Please enter the file address here
     if [[ -n "$raw_fna" && "$a" != "$ref_id" ]]; then
         echo -e "$a" >> Saccharomyces-cerevisiae-filter.txt
     fi
-done < /data/home/helab/weixianfang/trfinder-TRfinder/rsgb/rsgb_assembly_summary/fungi_ni/sc-zhongpao/mugsy/Saccharomyces-cerevisiae.txt
+done < ##Please enter the file address here
 
 # Step 2: Run Mugsy for whole genome alignment and insertions detection
-#SBATCH --job-name=sc3
+#SBATCH --job-name=""  ##Please enter here
 #SBATCH --partition=cpu
 #SBATCH -N 1
 #SBATCH --ntasks-per-node=1
@@ -41,7 +41,7 @@ while IFS= read -r a; do
     # Generate MUGSY alignment and identify insertions
     a_name=$(echo "$a" | sed 's/\./_/g')
     mugsy --directory "$indelfile_path" --prefix "$a_name" "$ref_fna" "$indelfile_path""$a".fna
-    python /data/home/helab/weixianfang/trfinder-TRfinder/mugsy-multiple-whole-genome-alignment/python_concordance/identy_insert-fwd-rev-done.py "$a_name".maf "$ref_id" "$a"_insert.tsv
+    python identy_insert-fwd-rev-done.py "$a_name".maf "$ref_id" "$a"_insert.tsv
 
     # Append insertions to the cumulative file
     cat "$indelfile_path""$a"_insert.tsv >> "${indelfile_path}${species_name}_insert.tsv"
@@ -124,3 +124,63 @@ while IFS=$'\t' read -r chr insert_start insert_alt insert_seq insert_len ref_un
 done < "${indelfile_path}before_trf_file.tsv"
 
 rm "${indelfile_path}before_trf_file.tsv" cor_filter_trf.txt
+
+
+# Step 5: Output statistical results
+awk -F'\t' -v species="$species_name" -v inter_count="$inter_count" '
+BEGIN {
+    OFS="\t"; 
+    count1=0; 
+    count2=0; 
+    count3=0; 
+    count4=0; 
+    count5=0
+}
+# Count different conditions based on the comparison of columns 6 and 7
+$6 != $7 {count1++}
+$6 != $7 && substr($6, 1, 1) != substr($7, 1, 1) {count2++}
+$6 != $7 && substr($6, 1, 1) == substr($7, 1, 1) {count3++}
+$6 != $7 && substr($6, 1, 2) == substr($7, 1, 2) {count4++}
+$6 != $7 && substr($6, 1, 3) == substr($7, 1, 3) {count5++}
+END {
+    # Output the results into a specific file
+    print species, inter_count, count1, count2, count3, count4, count5 >> "'"${mtdfile}"'fungi-insert-mtd-8bp-number_trf.tsv"
+}' "${mtdfile}${species_name}_MTD_trf.tsv"
+
+
+# Step 6: Count occurrences of 2x and 3x TD loci in isolates and add to final output file
+output_file2x_final="${mtdfile}${species_name}_MTD_trf_final.tsv"
+
+while IFS=$'\t' read -r chr insert_start insert_alt insert_seq insert_len ref_unit1_seq ref_unit2_seq mha_lengh; do
+    # Count occurrences of 2x TD loci
+    num2x=$(awk -v chr="$chr" -v pos="$insert_start" -v mut_alt="$insert_seq" -v length_bp="$insert_len" '
+    BEGIN {count=0}
+    $1==chr && $2==pos && $4==mut_alt {count++}
+    END {print count}
+    ' "${indelfile}${species_name}_insert.tsv")
+
+    # Count occurrences of 3x TD loci
+    num3x=$(awk -v chr="$chr" -v pos="$insert_start" -v mut_alt="$insert_seq" -v length_bp="$insert_len" '
+    BEGIN {count=0}
+    $1==chr && $2==pos && $5==length_bp*2 && substr($4, 1, length_bp)==mut_alt && substr($4, length_bp+1, length_bp)==mut_alt {count++}
+    END {print count}
+    ' "${indelfile}${species_name}_insert.tsv")
+
+    # Append the result to the final output file
+    echo -e "$chr\t$insert_start\t$insert_alt\t$insert_seq\t$insert_len\t$ref_unit1_seq\t$ref_unit2_seq\t$mha_lengh\t$num2x\t$num3x" >> "$output_file2x_final"
+done < "${mtdfile}${species_name}_MTD_trf.tsv"
+
+# Remove the intermediate file after processing
+rm "${mtdfile}${species_name}_MTD_trf.tsv"
+
+# The final output file "${mtdfile}${species_name}_MTD_trf_final.tsv" contains columns:
+# 1. Chromosome
+# 2. Insertion start position
+# 3. Insertion alternate sequence
+# 4. Insertion sequence
+# 5. Insertion length
+# 6. Reference sequence unit 1
+# 7. Reference sequence unit 2
+# 8. MHA length
+# 9. Count of 2x occurrences in isolates
+# 10. Count of 3x occurrences in isolates
