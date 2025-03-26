@@ -12,18 +12,18 @@
 # --------------------------
 # Configuration Section
 # --------------------------
-set -euo pipefail  # 增强脚本健壮性
+set -euo pipefail  
 
-REF_ID="GCF_000146045.2"
-SPECIES_NAME="Saccharomyces_cerevisiae"
-BASE_DIR="/data/home/helab/weixianfang"
-REF_FASTA="/share/home/helab/weixianfang/MTDtool/ref/GCF_000146045.2_R64_genomic.fna"
+REF_ID="" ##Please enter the file address here
+SPECIES_NAME="" ##Please enter the file address here
+BASE_DIR="" ##Please enter the file address here
+REF_FASTA="ref.fna" ##Please enter the file address here
 
 # Path Definitions
-DATA_DIR="${BASE_DIR}/trfinder-TRfinder/rsgb"
-MUGSY_DIR="${DATA_DIR}/rsgb_assembly_summary/fungi_ni/sc-zhongpao/mugsy/${SPECIES_NAME}"
-OUTPUT_DIR="${MUGSY_DIR}/output"
-TRF_WORKDIR="${BASE_DIR}/trfinder-TRfinder/add_trf_analy_mha"
+DATA_DIR="${BASE_DIR}" ##Please enter the file address here
+MUGSY_DIR="${DATA_DIR}/${SPECIES_NAME}" ##Please enter the file address here
+OUTPUT_DIR="${MUGSY_DIR}/output" ##Please enter the file address here
+TRF_WORKDIR="${BASE_DIR}/" ##Please enter the file address here
 
 # Create directories if missing
 mkdir -p "${MUGSY_DIR}" "${OUTPUT_DIR}" "${TRF_WORKDIR}"
@@ -33,8 +33,8 @@ mkdir -p "${MUGSY_DIR}" "${OUTPUT_DIR}" "${TRF_WORKDIR}"
 # --------------------------
 
 # Phase 1: Generate Strain Filter List
-filter_list="${MUGSY_DIR}/Saccharomyces-cerevisiae-filter.txt"
-assembly_list="${DATA_DIR}/rsgb_assembly_summary/fungi_ni/sc-zhongpao/mugsy/Saccharomyces-cerevisiae.txt"
+filter_list="${MUGSY_DIR}/" ##Please enter the file address here
+assembly_list="${DATA_DIR}/rsgb_assembly_summary/" ##Please enter the file address here
 
 > "${filter_list}"  # Initialize output file
 
@@ -73,7 +73,7 @@ process_assembly() {
           "${assembly_id}.fna"
     
     # Process MAF Output
-    python "${BASE_DIR}/trfinder-TRfinder/mugsy-multiple-whole-genome-alignment/python_concordance/identy_insert-fwd-rev-done.py" \
+    python "${BASE_DIR}/identify_insertion.py" \
           "${assembly_prefix}.maf" \
           "${REF_ID}" \
           "${assembly_id}_insert.tsv"
@@ -138,7 +138,7 @@ run_trf_filter() {
 
 # Final Statistics
 generate_statistics() {
-    # ... (添加数据验证步骤)
+    # ... (数据验证步骤)
     awk -F'\t' 'BEGIN {
         print "Species","AssemblyCount","TotalTDs","UniqueTDs","DivergentStart","ConservedStart2","ConservedStart3"
     } {
