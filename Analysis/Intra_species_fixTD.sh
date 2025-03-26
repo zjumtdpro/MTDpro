@@ -10,20 +10,11 @@ indelfile_path="" ##Please enter the file address here
 while IFS= read -r a; do
     raw_fna=$(find "" -name "$a*genomic.fna.gz") ##Please enter the file address here
     if [[ -n "$raw_fna" && "$a" != "$ref_id" ]]; then
-        echo -e "$a" >> Saccharomyces-cerevisiae-filter.txt
+        echo -e "$a" >> ##Please enter the file address here
     fi
 done < ##Please enter the file address here
 
 # Step 2: Run Mugsy for whole genome alignment and insertions detection
-#SBATCH --job-name=""  ##Please enter here
-#SBATCH --partition=cpu
-#SBATCH -N 1
-#SBATCH --ntasks-per-node=1
-#SBATCH --output=%j.out
-#SBATCH --error=%j.err
-#SBATCH --time=336:00:00
-#SBATCH --mem-per-cpu=70gb
-#SBATCH --cpus-per-task=1
 
 # Directory for storing files
 cd $indelfile_path
@@ -41,14 +32,14 @@ while IFS= read -r a; do
     # Generate MUGSY alignment and identify insertions
     a_name=$(echo "$a" | sed 's/\./_/g')
     mugsy --directory "$indelfile_path" --prefix "$a_name" "$ref_fna" "$indelfile_path""$a".fna
-    python identy_insert-fwd-rev-done.py "$a_name".maf "$ref_id" "$a"_insert.tsv
+    python identify_insertion.py "$a_name".maf "$ref_id" "$a"_insert.tsv
 
     # Append insertions to the cumulative file
     cat "$indelfile_path""$a"_insert.tsv >> "${indelfile_path}${species_name}_insert.tsv"
 
     # Clean up temporary files
     rm "$indelfile_path""$a".fna "$indelfile_path""$a".fna.gz "$a_name".maf "$a_name" "$a_name".mugsy.log
-done < /data/home/helab/weixianfang/trfinder-TRfinder/rsgb/rsgb_assembly_summary/fungi_ni/sc-zhongpao/mugsy/Saccharomyces-cerevisiae-filter.txt
+done <  ##Please enter the file address here
 
 # Remove duplicate entries
 awk '!seen[$1" "$2" "$4]++' "${indelfile_path}${species_name}_insert.tsv" > "${indelfile_path}${species_name}_insert_rmdup.tsv"
@@ -57,43 +48,43 @@ awk '!seen[$1" "$2" "$4]++' "${indelfile_path}${species_name}_insert.tsv" > "${i
 insert_num=$(wc -l < "${indelfile_path}${species_name}_insert_rmdup.tsv")
 
 # Step 3: Process insertion sequences
-awk -F'\t' 'BEGIN {OFS="\t"} {print $1, $2, $2+$5}' "$indelfile_path${species_name}_insert_rmdup.tsv" > ecoli-indel.bed
+awk -F'\t' 'BEGIN {OFS="\t"} {print $1, $2, $2+$5}' "$indelfile_path${species_name}_insert_rmdup.tsv" > indel.bed
 while IFS=$'\t' read -r chr start end; do
     echo -e "$chr\t$start\t$end" > position_per.bed
-    bedtools getfasta -fi "$ref_fna" -bed position_per.bed -fo ecoli-indel-seq.fa
+    bedtools getfasta -fi "$ref_fna" -bed position_per.bed -fo indel-seq.fa
     rm position_per.bed
 
-    if [[ -s ecoli-indel-seq.fa ]]; then
-        awk '/^>/{getline; print}' ecoli-indel-seq.fa >> ecoli-indel-seq-2.txt
+    if [[ -s indel-seq.fa ]]; then
+        awk '/^>/{getline; print}' indel-seq.fa >> indel-seq-2.txt
     else
-        echo " " >> ecoli-indel-seq-2.txt
+        echo " " >> indel-seq-2.txt
     fi
-done < ecoli-indel.bed
+done < indel.bed
 
 # Combine insertion data with sequences
-paste -d $'\t' "$indelfile_path${species_name}_insert_rmdup.tsv" ecoli-indel-seq-2.txt > ecoli-indel-4bp-7.txt
-rm ecoli-indel-seq-2.txt
+paste -d $'\t' "$indelfile_path${species_name}_insert_rmdup.tsv" indel-seq-2.txt > indel-4bp-7.txt
+rm indel-seq-2.txt
 
 # More processing
-awk -F'\t' 'BEGIN {OFS="\t"} {print $1, $2+$5, $2+$5+$5}' "$indelfile_path${species_name}_insert_rmdup.tsv" > ecoli-indel.bed
+awk -F'\t' 'BEGIN {OFS="\t"} {print $1, $2+$5, $2+$5+$5}' "$indelfile_path${species_name}_insert_rmdup.tsv" > indel.bed
 while IFS=$'\t' read -r chr start end; do
     echo -e "$chr\t$start\t$end" > position_per.bed
-    bedtools getfasta -fi "$ref_fna" -bed position_per.bed -fo ecoli-indel-seq.fa
+    bedtools getfasta -fi "$ref_fna" -bed position_per.bed -fo indel-seq.fa
     rm position_per.bed
 
-    if [[ -s ecoli-indel-seq.fa ]]; then
-        awk '/^>/{getline; print}' ecoli-indel-seq.fa >> ecoli-indel-seq-2.txt
+    if [[ -s indel-seq.fa ]]; then
+        awk '/^>/{getline; print}' indel-seq.fa >> indel-seq-2.txt
     else
-        echo " " >> ecoli-indel-seq-2.txt
+        echo " " >> indel-seq-2.txt
     fi
-done < ecoli-indel.bed
+done < indel.bed
 
 # Final combination of sequences
-paste -d $'\t' ecoli-indel-4bp-7.txt ecoli-indel-seq-2.txt > ecoli-indel-4bp-8.txt
-rm ecoli-indel-seq-2.txt
+paste -d $'\t' indel-4bp-7.txt indel-seq-2.txt > indel-4bp-8.txt
+rm indel-seq-2.txt
 
 # Filter sequences with no 'N' characters
-awk -F'\t' 'BEGIN {OFS="\t"} $4 !~ /N/ {print}' ecoli-indel-4bp-8.txt > tmp-8-2.txt
+awk -F'\t' 'BEGIN {OFS="\t"} $4 !~ /N/ {print}' indel-4bp-8.txt > tmp-8-2.txt
 
 # Output final insertion data
 awk -F'\t' 'BEGIN {OFS="\t"} $4 == $6 && $6 != $7 {print}' tmp-8-2.txt > tmp1_final.txt
@@ -106,13 +97,12 @@ rm tmp-8-1.txt tmp-8-2.txt tmp1_final.txt
 awk -F'\t' 'BEGIN {OFS="\t"} $5 >= 8 {print}' "${indelfile_path}${species_name}_MTD.tsv" > "${indelfile_path}before_trf_file.tsv"
 
 # TRF filtering process
-cd /data/home/helab/weixianfang/trfinder-TRfinder/add_trf_analy_mha
 
 while IFS=$'\t' read -r chr insert_start insert_alt insert_seq insert_len ref_unit1_seq ref_unit2_seq mha_lengh; do
     seqname=">corseq"
     echo -e "$seqname\n$insert_seq$ref_unit1_seq$ref_unit2_seq" > "$tmp_filetrf"corseq.fa
     trf corseq.fa 2 7 7 80 10 30 1000 -f -d -m
-    python /data/home/helab/weixianfang/trfinder-TRfinder/add_trf_analy_mha/convert_script2.py
+    python TRFconvert_script.py
     tr_file="corseq.fa.2.7.7.80.10.30.1000-tr.dat"
     awk -v value1="$insert_len" -v value2="$insert_seq" '$4 == value1 && $15 == value2 && $4 >= 8 { print $0 > "cor_filter_trf.txt" }' "$tr_file"
     cat cor_filter_trf.txt >> "$trf_format_output"
@@ -144,7 +134,7 @@ $6 != $7 && substr($6, 1, 2) == substr($7, 1, 2) {count4++}
 $6 != $7 && substr($6, 1, 3) == substr($7, 1, 3) {count5++}
 END {
     # Output the results into a specific file
-    print species, inter_count, count1, count2, count3, count4, count5 >> "'"${mtdfile}"'fungi-insert-mtd-8bp-number_trf.tsv"
+    print species, inter_count, count1, count2, count3, count4, count5 >> "'"${mtdfile}"'OUTPUT1.tsv"
 }' "${mtdfile}${species_name}_MTD_trf.tsv"
 
 
