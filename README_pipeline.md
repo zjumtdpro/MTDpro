@@ -9,6 +9,32 @@ This pipeline is used to analyze DEtail-seq data.
 First, duplicated reads which had same sequences for both forward and reverse reads were removed. And our own scripts RemoveSamReads.py were used to remove duplicated reads. Then, reads were aligned to the reference genome with Bowtie2 using --local settings. For visualization and spliting strand, the aligned reads files (BAM) were converted to single base bigWig file with 1 bp bins using bamCoverage from deepTools. Finally, poisson distribution is used for Hotspots calling, which is implemented by our own script Hotspotcalling.py.  
   
 **The detailed protocols were as follows:**
+🧬 MTDfinder-Pro
+
+English version is followed by the Chinese version.
+
+MTDfinder-Pro is a comprehensive computational pipeline for detecting Microhomology-Mediated Tandem Duplications (MTDs) across three evolutionary levels—intra-population, intra-species, and species-level.
+The pipeline supports both Illumina short reads and PacBio HiFi long reads, and integrates INDEL calling, 1×→2× tandem-duplication confirmation, and microhomology detection.
+
+A full description of the MTDfinder-Pro algorithm is provided in the manuscript (Revised Methods, lines xx–xx), and demonstrated in Author Response Figure 7.
+
+📦 Requirements 
+Required tools	Version (recommended)
+python3	≥3.8
+bwa	≥0.7
+pbmm2 (for PacBio HiFi)	latest
+bedtools	≥2.30
+samtools	≥1.10
+VarScan2	2.3.9
+TRF (Tandem Repeat Finder)	4.09
+MUGSY (for multi-genome alignment)	1.2.3
+awk	system
+fastp	≥0.22
+biopython	≥1.79
+
+
+
+
 ### 1.Removing duplication reads
 ```
 $ RemoveSamReads.py test_R1.fastq.gz test_R2.fastq.gz test
