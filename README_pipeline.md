@@ -1,10 +1,10 @@
 # MTDfinder-pro
-MTDfinder-pro provides a powerful approach to detect MTD ends in multiple species.  
+MTDfinder-pro provides a powerful approach to detect MicroHomologyMediatedTandemDuplications(MTD) in multiple species.  
 This pipeline is used to analyze DEtail-seq data.
 ## Requirements
-|[python]|[Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)|[bedtools](https://bedtools.readthedocs.io/en/latest/)|[samtools](http://www.htslib.org/)|[deeptTools](https://github.com/deeptools/deepTools)|
+|[python]|[bwa]|[bedtools]|[samtools]|[Tandem Repeat Finder]|
 |---|---|---|---|---|
-|[**pyBigWig**](https://github.com/deeptools/pyBigWig)|[**numpy**](https://numpy.org/)|[**scipy**](https://www.scipy.org/)|[**statsmodels**](https://www.statsmodels.org)|[**biopython**](https://biopython.org/)|
+|[**VarScan2**]|[**MUGSY**]|[**awk**]|[**fastp**]|[**biopython**]|
 ## Documentation
 First, duplicated reads which had same sequences for both forward and reverse reads were removed. And our own scripts RemoveSamReads.py were used to remove duplicated reads. Then, reads were aligned to the reference genome with Bowtie2 using --local settings. For visualization and spliting strand, the aligned reads files (BAM) were converted to single base bigWig file with 1 bp bins using bamCoverage from deepTools. Finally, poisson distribution is used for Hotspots calling, which is implemented by our own script Hotspotcalling.py.  
   
