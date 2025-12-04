@@ -29,8 +29,10 @@ Algorithmic details correspond to the revised manuscript and workflow.
 Install using conda or system package managers as needed.
 
 ---
-
-**The detailed protocols were as follows:**  
+#  **Note on previous version**:
+> The previous tool **MTDfinder** is now archived under [/MTDfinder](./MTDfinder). For its usage, please see [/MTDfinder/README.md](./MTDfinder/README.md).
+---
+# **The detailed protocols were as follows:**  
 
 
 ### I. Intra-population Analysis (_de novo_ MTD detection)  
